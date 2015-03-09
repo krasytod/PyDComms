@@ -13,6 +13,7 @@ import re
 from bs4 import BeautifulSoup as BS
 from comment import comment as comentar_class
 import helper ,sqlites
+import logging
 URL_DIRBG = "http://dnes.dir.bg/cat/all/"
 #URL_DIRBG = 'http://dnes.dir.bg//news_comments.php?id=17432461'
 #http://dnes.dir.bg/comments/list.php?jnl_id=3&ctype_id=1&topic_id=17432461&list=all_s&page=1&ran=0.06207822563065157
@@ -32,9 +33,6 @@ def read_dirbg(URL_DIRBG="http://dnes.dir.bg/cat/all/"):
     urllib2.install_opener(opener)
     dirbg = urllib2.urlopen(URL_DIRBG)
     charset = dirbg.headers.getparam('charset')
-    #files = open(name, 'w')   
-    #files.write(dirbg.read())
-    #print charset
     soup = BS(dirbg.read())
     
     return soup
@@ -51,7 +49,6 @@ def convert_url(url):
         return 1
     else:
         topic_id = url[idx+3:]        
-    #print topic_id
     ran=  random.random()   #накрая на урлъто трябва да има рандъм генерирано число между 0 и 1
     url =  "http://dnes.dir.bg/comments/list.php?jnl_id=3&ctype_id=1&topic_id="+str(topic_id)+"&list=all_s&flat=1&page=1&ran="+str(ran)  
     return url   
@@ -59,9 +56,7 @@ def convert_url(url):
 def extract_comments(soup):
     ''' Връща сет с линкове към страниците с коментари към отделните новини.   Дали да не зарежда и допълнително информация
     като да търси определени тагове в новината (Борисов, герб , Украйна и тн) '''    
-    #read_dirbg('dirbg.txt')    
     comments = set()
-    #soup = file_read_dir('dirbg.txt')
     result = soup.find("div", {"id":"fullarticles"})
     for data in result.findAll('div',attrs={'class':'coments'}):
         comments.add(convert_url("http://dnes.dir.bg/"+data.find_parent("a").get('href')))
@@ -72,7 +67,6 @@ def extract_comments(soup):
 def read_comments(link,last_comm_link='',list_comentari=[]):
     ''' получава линка с коментарите към конкретна новина и Речник с коментарите, чийто ключове са интегър дата на коментара с добавени осем рандъм символа отзад,  втория параметър е  линка на последния коментар в базата данни. проверява за него когато създава нов коментар и ако има съвпадение прекратява (нататък всички коментари са вече обходени '''
     ### отваря първата страница , проверява дали има и други страници или е само една   -ИДЕЯ!!! Дали няма директно ходене на последна страница ? мммм ???и така да знам точно колко страници има ? Май да!
-    #print last_comm_link    
     page_list=[1]
     opener = urllib2.build_opener()
     opener.addheaders = [('User-agent', ' Mozilla/5.0 (Windows NT 6.1; WOW64; rv:31.0) Gecko/20100101 Firefox/31.0')]
@@ -167,6 +161,7 @@ def read_comments_test(link,last_comm_link='',list_comentari=[]):
 
 import datetime
 def insert_in_db(all_comments):
+    logging.info('insert_in_db')
     date = datetime.datetime.now().date()
     from sqlalchemy import create_engine 
     engine = create_engine('sqlite:///'+str(date) +'.db', echo=False)   #базата данни с която ще работим
@@ -256,12 +251,9 @@ def return_cenz_comms(time_shift,options):
 
 def run_me(options=[]):
     '''подпрограмата която да бъде извиквана от основния файл.  '''
-    if options==[]:
-        pass
+    logging.info('run_me')
     soup= read_dirbg()
-    #print soup
     set_links = extract_comments(soup)
-    #print set_links
     for set_ in set_links:
         # last_comment_link( set_[67:74]  - topic_id което се подава на функцията която проверява базата данни и търси последния коментар към новината с това ID
         all_comments=read_comments( set_,last_comment_link( set_[67:74]))
@@ -269,8 +261,8 @@ def run_me(options=[]):
     
     #return read_all_comments(set_links)   # връща всички коментари към всички новини на първа страница 
 if __name__ == "__main__":
-    pass    
-    #run_me()    
+    #pass    
+    run_me()    
     
 def run_me_t(s=""):
     from time import sleep
