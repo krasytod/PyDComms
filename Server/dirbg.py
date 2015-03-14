@@ -14,6 +14,8 @@ from bs4 import BeautifulSoup as BS
 from comment import comment as comentar_class
 import helper ,sqlites
 import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 URL_DIRBG = "http://dnes.dir.bg/cat/all/"
 #URL_DIRBG = 'http://dnes.dir.bg//news_comments.php?id=17432461'
 #http://dnes.dir.bg/comments/list.php?jnl_id=3&ctype_id=1&topic_id=17432461&list=all_s&page=1&ran=0.06207822563065157
@@ -139,7 +141,7 @@ def read_comments(link,last_comm_link='',list_comentari=[]):
                 comm_link="http://dnes.dir.bg/news_comments.php?id="+news_id+u'&page='+page_num+u'&comment='+comm_id
                 #ако вече сме обходили коментарите нататък
                 if last_comm_link == comm_link:
-                    print "излизам"
+                    logging.debug(u'обходен')
                     return list_comentari
                 time_key =   helper.dirbg_convert_time(comment_time)             #  Ключа който се образува от датата на коментара
                 com_class = sqlites.comment(comm_id, comment_time,time_key,comment_name,comment_class_text,'Dir.bg',comm_link,comm_user ,"Sig- None",votes[0],votes[1])  
@@ -160,11 +162,14 @@ def read_comments_test(link,last_comm_link='',list_comentari=[]):
     return 0
 
 import datetime
-def insert_in_db(all_comments):
+def insert_in_db(all_comments,*args, **kwargs):
     logging.info('insert_in_db')
     date = datetime.datetime.now().date()
     from sqlalchemy import create_engine 
-    engine = create_engine('sqlite:///'+str(date) +'.db', echo=False)   #базата данни с която ще работим
+    if kwargs['db_name'] == "default":
+         engine = create_engine('sqlite:///'+str(date) +'.db', echo=False)   #базата данни с която ще работим
+    else:
+         engine = create_engine('sqlite:///'+kwargs['db_name'], echo=False)     
     sqlites.Base.metadata.create_all(engine)
     from sqlalchemy.orm import sessionmaker   # създава сесията 
     Session = sessionmaker(bind=engine)  #връзва сесията към базата данни
@@ -249,15 +254,18 @@ def return_cenz_comms(time_shift,options):
     return result,session    
  
 
-def run_me(options=[]):
+def run_me(*args, **kwargs):
     '''подпрограмата която да бъде извиквана от основния файл.  '''
+    db_name = "default"
+    if 'db_name' in kwargs:
+        db_name= kwargs['db_name']
     logging.info('run_me')
     soup= read_dirbg()
     set_links = extract_comments(soup)
     for set_ in set_links:
         # last_comment_link( set_[67:74]  - topic_id което се подава на функцията която проверява базата данни и търси последния коментар към новината с това ID
         all_comments=read_comments( set_,last_comment_link( set_[67:74]))
-        insert_in_db(all_comments)
+        insert_in_db(all_comments,db_name = db_name)
     
     #return read_all_comments(set_links)   # връща всички коментари към всички новини на първа страница 
 if __name__ == "__main__":

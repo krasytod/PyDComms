@@ -1,5 +1,4 @@
 #!flask/bin/python
-'''!/usr/bin/python'''
 # -*- coding: utf-8 -*-
 """
 Created on Fri Mar  6 13:32:24 2015
@@ -11,28 +10,28 @@ from daemonClass import Daemon
 import logging, threading,time
 logging.basicConfig(filename='log.log',level=logging.DEBUG)
 import dirbg
-from app import app
+import run
 #logging.debug('This message should go to the log file')
 #logging.info('So should this')
 #logging.warning('And this, too')
 
-def PeriodCheck(times = 60*5):  #5 minutes
+def PeriodCheck(times = 60*5*5):  #5 minutes
         while True:
             logging.info('checkfunc period is: '+str(times))
-            #dirbg.run_me()
+            dirbg.run_me()
             time.sleep(times)   
 
 def FlaskStart ():
+    run.run_flask()
     
-    app.run(debug=True)
 
 
 
 class ServerDaemon(Daemon):
-    def PeriodCheck(self,times = 60*5):  #5 minutes
+    def PeriodCheck(self,times = 60*5):  #5 minutes   # това май е за махане
         while True:
             logging.info('checkfunc period is: '+str(times))
-            #dirbg.run_me()
+            dirbg.run_me()
             time.sleep(times)   
 
     def run(self):
@@ -41,7 +40,7 @@ class ServerDaemon(Daemon):
         scraper_thread.daemon = True
         scraper_thread.start()
         logging.info('after scraper')
-        FlaskStart()
+        #FlaskStart()
         logging.info('after flask')
           #
         
