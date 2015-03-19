@@ -1,0 +1,52 @@
+<!-- extend base layout -->
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+table,td,th{
+    border: 1px solid black;
+    tr.noBorder td {border: 0px; }
+}
+</style>
+
+
+<table>
+<tr class="noBorder">
+<td>Коментари в текущата база данни: {{num_comments}}&nbsp;&nbsp;&nbsp;</td>
+<td>
+<!--- Навигация --->
+{% if page>1 %}
+<a href=http://localhost:5000/comments/?page=0&cenzor={{cenzor}}>Първа &nbsp;&nbsp;	</a>
+{% endif %}
+
+{% if page>0 %}
+<a href=http://localhost:5000/comments/?page={{page-1}}&cenzor={{cenzor}}> Предишна &nbsp;&nbsp;</a>
+{% endif %}
+
+{% if page < num_comments/20 %}
+<a href=http://localhost:5000/comments/?page={{page+1}}&cenzor={{cenzor}}> Следваща &nbsp;&nbsp;</a>
+<a href=http://localhost:5000/comments/?page={{num_comments//20+1}}&cenzor={{cenzor}}> Последна </a></td>
+{% endif %}
+
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<th>Коментиращ</th>
+<th>Текст</th>
+<th>Час </th>
+<th>+</th>
+<th>-</th>
+</tr>
+{% for bla in blas %}
+  <tr>
+  <td>{{ bla._name}}</td>    
+  <td>{{ bla._text }}</td>
+  <td>{{ bla._date }}</td>
+  <td>{{ bla._votes_plus }}</td>
+  <td>{{ bla._votes_minus }}</td>
+  </tr>
+  {% endfor %}
+  </table>
+{% endblock %}

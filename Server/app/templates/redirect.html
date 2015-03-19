@@ -1,0 +1,49 @@
+<!-- extend base layout -->
+{% extends "base.html" %}
+
+{% block content %}
+
+<!   countdown timer           !>
+    
+<link rel="stylesheet" href="/static/css/jquery.countdown.css"> 
+<style type="text/css">
+#defaultCountdown { width: 240px; height: 45px; }
+</style>
+
+<script src="/static/js/jquery.plugin.js"></script>
+<script src="/static/js/jquery.countdown.js"></script>
+<script>
+$(function () {
+	var austDay = new Date();
+	austDay = new Date(austDay.getFullYear() + 1, 1 - 1, 26);
+	$('#defaultCountdown').countdown({until: +{{timer}},format: 'S',expiryUrl: '{{link}} ',layout: '{{ text }}: {sn} секунди'});  <!-- Дифаулткаундаун е идентификатора на функцията,  и подаваме периметър 10 (секунди)
+	$('#year').text(austDay.getFullYear());
+});
+</script>
+
+   <!   END countdown timer           !>
+
+  
+  <!--   {% for post in posts %}    {% endfor %}-->
+  <br><br>
+    <p>
+		<div class="container">
+
+      <!-- Main component for a primary marketing message or call to action -->
+      <div class="jumbotron">
+        <div id="defaultCountdown"> </div> 
+        <br>
+
+        
+        <a class="btn btn-lg btn-primary" href={{link}} role="button">Върни се обратно сега»</a>
+
+        </p>
+      </div>
+
+    </div>
+    
+
+<br><br><br><br><br><br><br>
+<br> <a href = http://keith-wood.name/countdown.html> Използван е този много хубав Дж скрипт плъгин за таймер</a>   
+   
+{% endblock %}

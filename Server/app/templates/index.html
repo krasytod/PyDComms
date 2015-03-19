@@ -1,0 +1,35 @@
+<!-- extend base layout -->
+{% extends "base.html" %}
+
+{% block content %}
+  
+  <!--   {% for post in posts %}    {% endfor %}-->
+  <br><br>
+    <p>
+		<div class="container">
+
+      <!-- Main component for a primary marketing message or call to action -->
+      <div class="jumbotron">
+        <h1>{{ db_name }}</h1>
+
+        
+        <a class="btn btn-lg btn-primary" href="/newdb" role="button">Създай нова база данни »</a>
+
+        </p>
+      </div>
+
+    </div>
+  
+    </p>
+    <!-- по този начин се екстрактват месиджите създадени с flash  -->
+    {% with messages = get_flashed_messages() %}
+	{% if messages %}
+    <ul class=flashes>
+    {% for message in messages %}
+      <li>{{ message }}</li>
+    {% endfor %}
+    </ul>
+     {% endif %}
+	{% endwith %}
+   
+{% endblock %}
