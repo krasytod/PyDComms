@@ -3,45 +3,23 @@
 
 {% block content %}
 
-  <h1>Избери за изтриване от списъка:</h1>
-  <form action="/cenzor-edit/single" method="post" name="edit">
+  <h1>Избери думи за изтриване</h1>
+  <form  method="post" name="delete">
      <!--- <div style="display:none;"><input id="csrf_token" name="csrf_token" type="hidden" value="1426530910##bafc59d28ee983c724d1a9c36e13393fb3ba15d2"></div>  --->
      {{ form.hidden_tag() }}
     <table> <tr>
      <td> <table> <tr>      
           <tr>   <!-- тук започват трите опции, текст фийлд, радио бутон и дроп даун меню -->
               <td>Израз/Дума:<br>
-               {{ form.cenzor(size=32) }}</td> 
+               {{ form.choice_for_del(size = num)}}</td> 
           </tr>
-          <tr>            
-              <td>Тип: <br>
-              {{ form.cenType }}</td>
-          </tr>
-		  <tr>
-			<td><label for="weight">Тежест:</label>
-			{{ form.weight}}</td> </tr>
-		  </tr>
-	                
-       <!-- Край на текстовите полета --->
-        <tr> <td><input type="submit" value="Save Changes"></td></tr>  </form>
-    </table> </td>  
-    <td>&nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp</td>
-    <td>
-    <form  action="/cenzor-edit/multi" method="post" name="editMulti">
-		{{ Multiform.hidden_tag() }}
-		
-		<style>
-			#inner {
-			color: red;
-		}</style>
-    <span>Вкарани: <br><span id="inner"></span></span>
-    {{ Multiform.choices(style="display:none;") }}
-	<input type="submit" value="Save Changes"></td></tr>
-       
-    </td>  
-    </tr></table> </form>
 
-  <button name= "add">Добави</button>
+       <!-- Край на текстовите полета --->
+        <tr> <td><input type="submit" value="Изтрий"></td></tr>  </form>
+    </table> </td>  
+    
+
+  
       <!--flash  message -->
     
 	
@@ -63,14 +41,15 @@
 
 
 
-    <!-- Bootstrap core JavaScript
-    ================================================== -->
-    <!-- Placed at the end of the document so the pages load faster -->
-   <!--- <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>  <script src="/static/js/bootstrap.min.js"></script>--->
+
     
+    <!---================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+   <!--- <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>  x
+    <script src="/static/js/bootstrap.min.js"></script>
     <script>
 <!---$( "ul li:nth-child(2)" ).append( "<span> - 2nd!</span>" );  --->
-<!--- $( "table tr td:nth-child(1)").css( "background", "red" );  --->
+<!--- $( "table tr td:nth-child(1)").css( "background", "red" );  
 $( "button" ).click(function() {
   var wordCenzor = $( "#cenzor" ).val();   
   var type = $( "input:radio[name=cenType]:checked" ).val();
@@ -85,5 +64,7 @@ $( "button" ).click(function() {
 
 });
 </script>
+    --->
     
+
 {% endblock %}

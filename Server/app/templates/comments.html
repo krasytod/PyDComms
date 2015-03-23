@@ -10,6 +10,8 @@ table,td,th{
 </style>
 
 
+
+
 <table>
 <tr class="noBorder">
 <td>Коментари в текущата база данни: {{num_comments}}&nbsp;&nbsp;&nbsp;</td>
@@ -36,17 +38,26 @@ table,td,th{
 <th>Коментиращ</th>
 <th>Текст</th>
 <th>Час </th>
+<th>Линк </th>
 <th>+</th>
 <th>-</th>
 </tr>
 {% for bla in blas %}
   <tr>
-  <td>{{ bla._name}}</td>    
-  <td>{{ bla._text }}</td>
-  <td>{{ bla._date }}</td>
-  <td>{{ bla._votes_plus }}</td>
-  <td>{{ bla._votes_minus }}</td>
+  <td>{{ bla._name|safe}}</td>    
+  <td>{{ bla._text|safe }}</td>
+  <td>{{ bla._date|safe }}</td>
+  <td><a href =/redirect/?mark_read=1&url={{ bla._url|safe }}&id={{ bla._id|safe }} target="_blank" class = "check">Линк</a></td>
+  <td>{{ bla._votes_plus|safe }}</td>
+  <td>{{ bla._votes_minus|safe }}</td>
   </tr>
   {% endfor %}
   </table>
+  
+  <script>
+ $( "a.check").click(function()
+ {$( this ).text("Проверено");   });
+  </script>  
+  
+
 {% endblock %}
