@@ -6,6 +6,18 @@ Created on Mon Sep 29 12:11:35 2014
 @author: krasytod
 """
 import datetime
+import liv
+
+
+def search_shodni(comments_lst,shodni_lst):
+	'''Търсии и намира сходни коментари, използва ливенщайн. Получава списък с всички коментари и списък със "сходни" '''
+	found_list=[]
+	for shoden in shodni_lst:
+		for comment in comments_lst:
+			if liv.compare_texts(shoden._text, comment._text) < 0.85:
+				found_list.append(comment)
+	return found_list
+
 
 def dir_convert_time(time_struct):
     '''Конвертира времето върнато от date.time в секунди по подобие на дирбгконверттайма.  '''
@@ -14,7 +26,7 @@ def dir_convert_time(time_struct):
 
 def dirbg_convert_time(time_string):
     ''' конвертира дата/час стринг в интиджър с int = 0  01.01.2000 00:00
-    пример date_string  = "23.09.2014 16:09  , date_int = 476122140
+    пример date_string  = "23.09.2014 16:09  , date_int = 476122140          2015-04-27 20:49:32
     '''
     total_seconds = 0
     if  len(time_string) < 17:     # понякога тайм стринга съдържа и други символи(нещо с кодировката) които крашват функцията
@@ -30,6 +42,21 @@ def dirbg_convert_time(time_string):
     #==============================================================================
 
     return total_seconds
+    
+    
+    
+def dirbg_convert_time_admin_ext(date_time_string):
+	'''конвертира вермевия стемп от панела с коментари  2015-04-27 20:49:32'''
+	date_time= date_time_string.split()[1]
+	total_seconds = 0
+	try:
+		pt =datetime.datetime.strptime(date_time ,'%H:%M:%S')
+		total_seconds = pt.minute*60+pt.hour*3600 +  pt.second# * забележка най-отдолу
+	except ValueError,e:
+		print e
+		total_seconds = 666666
+	
+	return  total_seconds 
 
 def dnevnik_convert_time(time_string):
     ''' конвертира датата и часа взети от коментара в дневник, особено спрямо дира е че използва букви за месец, "окт= октомври и тн"

@@ -2,8 +2,8 @@
 
 def run_flask():
 	from app import app
-	app.run(debug=True)
-
+	app.run(debug=True,threaded=True)
+	
 
 
 if __name__ == "__main__":
