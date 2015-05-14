@@ -12,7 +12,7 @@ import urllib2,gzip,cookielib, requests
 import random,re
 from cookielib import LWPCookieJar
 from bs4 import BeautifulSoup as BS
-import helper 
+import helper,dirbg 
 import logging,time #,cookielib
 from StringIO import StringIO
 logger = logging.getLogger(__name__)
@@ -235,6 +235,34 @@ def hide_user(_id="177536",topic_id="18964694",ctype_id="1",jnl_id="3",link = 'h
 	response=season_dir.post(link, headers  = headers,data = payload)
 	#print response.status_code
 	return response.status_code
+
+
+def get_news(link="http://dnes.dir.bg/?&state=2"):
+	'''Връща списък от линкове с най-популярните новини под формата на лист от речници с ключове text и url  '''
+	season_dir = requests.session()
+	season_dir.cookies = LWPCookieJar('cookies.txt')
+	season_dir.cookies.load()
+	headers  = {"Host":"dnes.dir.bg", "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+	'User-Agent':"Mozilla/5.0 (X11; Linux x86_64; rv:39.0) Gecko/20100101 Firefox/39.0","Connection":"keep-alive"}
+	response=season_dir.get(link, headers  = headers)
+	soup = BS(response.text)
+	comments = set()
+	news = list()
+	result = soup.find("div", {"id":"fullarticles"})  #списък с всичките заглавия
+	for div_txt in result.findAll('div',attrs={'class':'txt'}):
+		#<div class="txt"><h2><a href="/news/oon-kristalina-georgieva-generalen-sekretar-19057381?nt=10">”Политико” слага Кристалина Георгиева начело на ООН</a></h2>
+           # Престижното американско издание “Политико” пише, че предвид бързия ѝ възход все повече гласове в Брюксел виждат Кристалина Георгиева в... <b><a href="/news/oon-kristalina-georgieva-generalen-sekretar-19057381?nt=10">прочети още »</a></b>
+		#print div_txt, "\n\n"
+		one_news_dict = dict()
+		one_news_dict['text'] =  div_txt.find('a').get_text()
+		news_id =   re.findall(r'\d+\?nt', div_txt.find('a').get('href'))[0][:-3]  # така взимаме IDто на новината
+		if news_id == None:
+			continue
+		one_news_dict['url'] = "http://dnes.dir.bg/comments/list_ed.php?jnl_id=3&ctype_id=1&topic_id="+news_id + "&list=all&page=1&ran=0.08729374515991262"
+ 		news.append (one_news_dict)
+		#print a_link.get('href'),a_link.getText()  # заглавие и линк на новините на Първа
+
+	return news
 
 
 if __name__ == "__main__":
