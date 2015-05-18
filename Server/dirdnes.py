@@ -62,9 +62,101 @@ def soupufy(response_text):
 		
 	return comments_list_return,news_dict
 
-    
+def soupufy_brote(response_text,comments_list =[]):
+	''' Да извадим всички коментари и техните атрибути от едитор екстърнал панела.Връща лист от дикшънарита'''
+	soup = BS(response_text)
+	#comments_list = []
+	list_comms = soup.findAll("div", {"class":"AppComm_coment _comment"})  #списък с всичките коментари
+	for comment_div in list_comms:
+		commentar_dict = dict()
+		commentar_dict['user'] = comment_div.find("div",{"class":"left"}).find("img").get("title") 
+		commentar_dict['ip'] =  comment_div.find("span",{'class': 'commentDate'}).get_text().split("-")[1]     #user         # comment_div.get("id").split("_")  - id На новина и коментар
+		commentar_dict['news_id']=comment_div.get("id").split("_")[3]
+		commentar_dict['comm_id']=comment_div.get("id").split("_")[4]
+		commentar_dict['id']=comment_div.get("id")
+		comments_list.append(commentar_dict)
+		#print comments_list
+		#print comment_div.get("id").split("_"),comment_div.find("div",{"class":"left"}).find("img").get("title") 
+	return 0 #comments_list
 
-  
+
+def extact_comment_brote (links = ['http://dnes.dir.bg/comments/list_ed.php?jnl_id=3&ctype_id=1&topic_id=19068162&list=all&page=1&ran=0.08729374515991262']):
+	'''Екстрактва коментарите от едиторс панела и ги връща като лист от дикшинърита'''
+	#print links
+	#links = {'11': {'url': u'http://dnes.dir.bg/comments/list_ed.php?jnl_id=3&ctype_id=1&topic_id=19080958&list=all&page=1&ran=0.08729374515991262', 'text': u'\u0410\u0442\u0438\u043d\u0430 \u043d\u044f\u043c\u0430 \u0434\u0430 \u043e\u0442\u0441\u0442\u044a\u043f\u0438 \u0437\u0430 \u043e\u0440\u044f\u0437\u0432\u0430\u043d\u0435 \u043d\u0430 \u0437\u0430\u043f\u043b\u0430\u0442\u0438 \u0438 \u043f\u0435\u043d\u0441\u0438\u0438', 'br': 0}}
+	season_dir = requests.session()
+	season_dir.cookies = LWPCookieJar('cookies.txt')
+	season_dir.cookies.load()
+	headers  = {"Host":"dnes.dir.bg", "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+	'User-Agent':"Mozilla/5.0 (X11; Linux x86_64; rv:39.0) Gecko/20100101 Firefox/39.0","Connection":"keep-alive"}
+	comments_list = []
+	for link in links.values():
+		#print link['url']
+		response=season_dir.get(link['url'], headers  = headers)
+		soupufy_brote(response.text,comments_list) 
+	#print "ii: " ,len(comments_list)
+	return  comments_list#comm_list , news_dict
+	
+def Brote_stop_this(comentar_za_spirane):
+	'''Получава коментара  дикшънари и спира коментара с основание спам'''
+	
+	# filter:"0" , allow[]:"0",select[]:"0",unselect[]:"0",reject[]:"0",unflag[]:"0",revise[]:"4_1_19075213_95295" , reject[]:"13_1_19076304_94239"     r_reason_13_1_19076304_94239:"5"  - спам
+	#",20150517105955_3_1_19068162_94627_1740068_5,20150517114119_3_1_19068162_94773_1740068_5"
+	payload = { "jnl_id":"3","ctype_id":"1","topic_id":comentar_za_spirane["news_id"],"allow":"","reject":","+comentar_za_spirane['id']+"_5","select":"","unselect":"","move":"","move_selected":"","move_to":"0","action":"submit_all"}
+	#print payload
+	#payload ["reject[]"] = comentar_za_spirane["id"]
+	#payload ["r_reason_"+comentar_za_spirane["id"]] = "5"
+	season_dir = requests.session()
+	season_dir.cookies = LWPCookieJar('cookies.txt')
+	season_dir.cookies.load()
+	headers  = {"Host":"dnes.dir.bg", "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","X-Requested-With":"XMLHttpRequest",
+	'User-Agent':"Mozilla/5.0 (X11; Linux x86_64; rv:39.0) Gecko/20100101 Firefox/39.0","Connection":"keep-alive","Referer":"http://dnes.dir.bg/news_comments.php?id="+comentar_za_spirane["news_id"]}
+	response=season_dir.post("http://dnes.dir.bg/comments/admin.php", data=payload,headers  = headers)
+	#print response.status_code,response.text 
+	
+	
+def Brote_restore_this(comentar_za_spirane):
+	'''Получава коментара като дикшънари и го връща '''
+	# filter:"0" , allow[]:"0",select[]:"0",unselect[]:"0",reject[]:"0",unflag[]:"0",revise[]:"4_1_19075213_95295" , reject[]:"13_1_19076304_94239"     r_reason_13_1_19076304_94239:"5"  - спам
+	#
+	payload = { "jnl_id":"3","ctype_id":"1","topic_id":comentar_za_spirane["news_id"],"allow":"","reject":","+comentar_za_spirane['id']+"_5","select":"","unselect":"","move":"","move_selected":"","move_to":"0","action":"submit_all"}
+	#print payload
+	#payload ["reject[]"] = comentar_za_spirane["id"]
+	#payload ["r_reason_"+comentar_za_spirane["id"]] = "5"
+	season_dir = requests.session()
+	season_dir.cookies = LWPCookieJar('cookies.txt')
+	season_dir.cookies.load()
+	headers  = {"Host":"dnes.dir.bg", "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","X-Requested-With":"XMLHttpRequest",
+	'User-Agent':"Mozilla/5.0 (X11; Linux x86_64; rv:39.0) Gecko/20100101 Firefox/39.0","Connection":"keep-alive","Referer":"http://dnes.dir.bg/news_comments.php?id="+comentar_za_spirane["news_id"]}
+	response=season_dir.post("http://dnes.dir.bg/comments/admin.php", data=payload,headers  = headers)
+	
+	
+def brote_moderate(comments_list,users_ban=[u'Мулетаров'] ,ip_ban=["127.0.0.1"]):
+	'''Подпрограмата за спиране на брут коментари '''
+	#mod_duma = u'Мулетаров'  #http://dnes.dir.bg/comments/list_ed.php?jnl_id=3&ctype_id=1&topic_id=19080958&list=all&page=1&ran=0.08729374515991262
+	
+	com_stoped= []   #лист със спряните коментари
+	#print users_ban.keys()
+	#print "ebb: ",len(comments_list)
+	for comment in comments_list:
+		for user in users_ban.keys():
+			#print user,comment['user']
+			if user in comment['user']:
+			#print comment['id']
+				Brote_stop_this(comment)
+				#print "h"
+				com_stoped.append( comment)
+		for ip in ip_ban.keys():
+			if "178.167.254." in comment['ip'] : 
+				#pass
+				print comment['ip'],comment['user']
+			#print "bs: ", comment['ip']
+			if ip in comment['ip']:
+			#print comment['id']
+				Brote_stop_this(comment)
+				print comment['ip']
+				com_stoped.append( comment)
+	return com_stoped
     
 def vote_up(link,small_loop=10,big_loop=4,action=1):
     '''Гласува автоматично в коментарите под новините. Очаква линка за гласуване, брой гласувания, и типа гласуване. 1 - положителен,2 -отрицателен '''
@@ -122,21 +214,6 @@ def login(user=u'bla',password=u'bla'):
 	
 	#print season_dir
 	return "Login Complete"
-	
-	
-	
-	#cj = cookielib.CookieJar()
-	'''	user_agent= [u"Mozilla/6.0 (compatible; MSIE 11.0; Windows NT 6.1)"]
-	opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj),urllib2.HTTPRedirectHandler())
-	opener.addheaders = [('User-Agent',user_agent ),('Referer', 'http://clubs.dir.bg/'),('Accept','text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'),('Accept-Charset', 'UTF-8;q=0.7,*;q=0.7'),('Cache-Control', 'no-cache'),('Accept-encoding', 'gzip'),('Accept-Language','de,en;q=0.7,en-us;q=0.3')]
-	opener.Request(url, {'username': 'chlen1','password':'supatopcheta'} )
-	
-	data = urllib2.urlencode({'username': 'chlen1','password':'supatopcheta'})
-	h = httplib.HTTPConnection('id.dir.bg:8080')
-	headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain",'Referer': 'http://clubs.dir.bg','User-Agent':"Mozilla/6.0 (compatible; MSIE 11.0; Windows NT 6.1)"}
-	h.request('POST', '/inout-tracker/index.php', data, headers) http://httpbin.org/post"
-	r = h.getresponse()
-	print r '''  
 
 
 
@@ -247,8 +324,9 @@ def get_news(link="http://dnes.dir.bg/?&state=2"):
 	response=season_dir.get(link, headers  = headers)
 	soup = BS(response.text)
 	comments = set()
-	news = list()
+	news = dict()
 	result = soup.find("div", {"id":"fullarticles"})  #списък с всичките заглавия
+	br = 0 # counter
 	for div_txt in result.findAll('div',attrs={'class':'txt'}):
 		#<div class="txt"><h2><a href="/news/oon-kristalina-georgieva-generalen-sekretar-19057381?nt=10">”Политико” слага Кристалина Георгиева начело на ООН</a></h2>
            # Престижното американско издание “Политико” пише, че предвид бързия ѝ възход все повече гласове в Брюксел виждат Кристалина Георгиева в... <b><a href="/news/oon-kristalina-georgieva-generalen-sekretar-19057381?nt=10">прочети още »</a></b>
@@ -259,7 +337,11 @@ def get_news(link="http://dnes.dir.bg/?&state=2"):
 		if news_id == None:
 			continue
 		one_news_dict['url'] = "http://dnes.dir.bg/comments/list_ed.php?jnl_id=3&ctype_id=1&topic_id="+news_id + "&list=all&page=1&ran=0.08729374515991262"
- 		news.append (one_news_dict)
+		#one_news_dict['counter'] = str(br)
+		one_news_dict['br'] = 0
+		news[str(br)] = one_news_dict
+		br +=1
+ 		
 		#print a_link.get('href'),a_link.getText()  # заглавие и линк на новините на Първа
 
 	return news
