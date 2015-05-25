@@ -18,7 +18,7 @@ from StringIO import StringIO
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 URL_DIRBG = "http://dnes.dir.bg/cat/all/"   #dnes.dir.bg/cat/all/?section=all&page=0&state=0&titles=
-
+import datetime
 
 def soupufy(response_text):
 	''' Да извадим всички коментари и техните атрибути от админ екстърнал панела'''
@@ -31,13 +31,20 @@ def soupufy(response_text):
 		comm_id ,type_comm = comment.get('id'),comment.get('bgcolor')  # comment id и цвета на коментара
 		comm_type = 0
 		if type_comm =="red":
+			#print "cherven" 
 			comm_type = 2
-		if comm_id == None:
+		elif type_comm =="pink":
+			#print "pink" 
+			comm_type = 3
+		
+		
+		elif comm_id == None:
 			continue
 		else:
 			comm_type = 1
 		list_td = comment.findAll("td") 
 		#list_td[1]   - Журнал
+		_com_reason =  comment.find("input",{"type":"radio"}).get("name")[9:] #        r_reason_
 		comm_topic= list_td[2].get_text()  #от това се вадят интересните неща за топика                  #,"BRRRRRRRRRRRRRRRR\n" 
 		news_id = re.search(r'\b\d+\b',comm_topic).group(0)       #   ,"::::::",comm_topic
 		news_link = list_td[2].find("a",{"target":"_blank"}).get("href")
@@ -51,7 +58,7 @@ def soupufy(response_text):
 		#print list_td[8], comm_edit_url
 		comm_secs = helper.dirbg_convert_time_admin_ext("2015-04-27 20:49:32")
 		#print comm_id ,comm_type,news_id ,news_link,news_name,comm_user,comm_date,comm_ip,comm_post,comm_secs,  "\n\n\n::::::::\n\n\n"
-		one_comm_list = list([comm_date,comm_id ,comm_secs,comm_post,comm_user,comm_type,news_id ,0,comm_ip,"http://dnes.dir.bg/comments/"+comm_edit_url])
+		one_comm_list = list([comm_date,comm_id ,comm_secs,comm_post,comm_user,comm_type,news_id ,0,comm_ip,"http://dnes.dir.bg/comments/"+comm_edit_url,_com_reason])
 		comments_list_return.append(one_comm_list)
 		news_dict [news_id ] = [news_link ,news_name,list_td[1].get_text()]
 	#comments_list_return.append([ news_id,news_name, news_link])
@@ -67,13 +74,17 @@ def soupufy_brote(response_text,comments_list =[]):
 	soup = BS(response_text)
 	#comments_list = []
 	list_comms = soup.findAll("div", {"class":"AppComm_coment _comment"})  #списък с всичките коментари
+	
 	for comment_div in list_comms:
+		#print comment_div.find("span",{'class': 'commentDate'}).get_text().split("-")[0]            #comment_div.find("br",{"clear":"all"}).get_text()
 		commentar_dict = dict()
 		commentar_dict['user'] = comment_div.find("div",{"class":"left"}).find("img").get("title") 
 		commentar_dict['ip'] =  comment_div.find("span",{'class': 'commentDate'}).get_text().split("-")[1]     #user         # comment_div.get("id").split("_")  - id На новина и коментар
 		commentar_dict['news_id']=comment_div.get("id").split("_")[3]
 		commentar_dict['comm_id']=comment_div.get("id").split("_")[4]
 		commentar_dict['id']=comment_div.get("id")
+		commentar_dict['text'] =  comment_div.find("br",{"clear":"all"}).get_text()
+		commentar_dict['date'] = comment_div.find("span",{'class': 'commentDate'}).get_text().split("-")[0]  
 		comments_list.append(commentar_dict)
 		#print comments_list
 		#print comment_div.get("id").split("_"),comment_div.find("div",{"class":"left"}).find("img").get("title") 
@@ -90,8 +101,9 @@ def extact_comment_brote (links = ['http://dnes.dir.bg/comments/list_ed.php?jnl_
 	headers  = {"Host":"dnes.dir.bg", "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 	'User-Agent':"Mozilla/5.0 (X11; Linux x86_64; rv:39.0) Gecko/20100101 Firefox/39.0","Connection":"keep-alive"}
 	comments_list = []
+	
+	
 	for link in links.values():
-		#print link['url']
 		response=season_dir.get(link['url'], headers  = headers)
 		soupufy_brote(response.text,comments_list) 
 	#print "ii: " ,len(comments_list)
@@ -115,11 +127,11 @@ def Brote_stop_this(comentar_za_spirane):
 	#print response.status_code,response.text 
 	
 	
-def Brote_restore_this(comentar_za_spirane):
+def Brote_restore_this(comentar_za_puskane):
 	'''Получава коментара като дикшънари и го връща '''
 	# filter:"0" , allow[]:"0",select[]:"0",unselect[]:"0",reject[]:"0",unflag[]:"0",revise[]:"4_1_19075213_95295" , reject[]:"13_1_19076304_94239"     r_reason_13_1_19076304_94239:"5"  - спам
 	#
-	payload = { "jnl_id":"3","ctype_id":"1","topic_id":comentar_za_spirane["news_id"],"allow":"","reject":","+comentar_za_spirane['id']+"_5","select":"","unselect":"","move":"","move_selected":"","move_to":"0","action":"submit_all"}
+	payload = { "jnl_id":"3","ctype_id":"1","topic_id":comentar_za_puskane._news_id,"allow":"","reject":","+comentar_za_puskane._id+"_5","select":"","unselect":"","move":"","move_selected":"","move_to":"0","action":"submit_all"}
 	#print payload
 	#payload ["reject[]"] = comentar_za_spirane["id"]
 	#payload ["r_reason_"+comentar_za_spirane["id"]] = "5"
@@ -127,10 +139,33 @@ def Brote_restore_this(comentar_za_spirane):
 	season_dir.cookies = LWPCookieJar('cookies.txt')
 	season_dir.cookies.load()
 	headers  = {"Host":"dnes.dir.bg", "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","X-Requested-With":"XMLHttpRequest",
-	'User-Agent':"Mozilla/5.0 (X11; Linux x86_64; rv:39.0) Gecko/20100101 Firefox/39.0","Connection":"keep-alive","Referer":"http://dnes.dir.bg/news_comments.php?id="+comentar_za_spirane["news_id"]}
+	'User-Agent':"Mozilla/5.0 (X11; Linux x86_64; rv:39.0) Gecko/20100101 Firefox/39.0","Connection":"keep-alive","Referer":"http://dnes.dir.bg/news_comments.php?id="+comentar_za_puskane._news_id}
 	response=season_dir.post("http://dnes.dir.bg/comments/admin.php", data=payload,headers  = headers)
 	
+
+
+def get_news_text_by_id(link):
+	''' по получен линк към коментарите на новината , връща нейното заглавие'''
+	#http://dnes.dir.bg/news_comments.php?id=19103710
+	#http://dnes.dir.bg/comments/list_ed.php?jnl_id=3&ctype_id=1&topic_id=19101072&list=all&page=1&ran=0.08729374515991262
+	return  "http://dnes.dir.bg/news_comments.php?id="+re.findall('\d+',link)[2]
 	
+	
+def get_news_text_by_link(link):
+	headers  = {"Host":"dnes.dir.bg", "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+	u'User-Agent':u"Mozilla/5.0 (X11; Linux x86_64; rv:39.0) Gecko/20100101 Firefox/39.0","Connection":"keep-alive"}
+	season_dir = requests.session()
+	## създаване на кукитата, така че да могат да се съхпанят във файл, после извикваме гет или пост на рекуест сешъна
+	cookie_file = 'cookies.txt'
+	cj = cookielib.LWPCookieJar(cookie_file)
+	season_dir.cookies = cj
+	response =season_dir.get(link,headers = headers)
+	soup = BS(response.text)
+	h3 = soup.find("h3").get_text()
+	#print h3
+	return h3
+
+
 def brote_moderate(comments_list,users_ban=[u'Мулетаров'] ,ip_ban=["127.0.0.1"]):
 	'''Подпрограмата за спиране на брут коментари '''
 	#mod_duma = u'Мулетаров'  #http://dnes.dir.bg/comments/list_ed.php?jnl_id=3&ctype_id=1&topic_id=19080958&list=all&page=1&ran=0.08729374515991262
@@ -143,18 +178,17 @@ def brote_moderate(comments_list,users_ban=[u'Мулетаров'] ,ip_ban=["127
 			#print user,comment['user']
 			if user in comment['user']:
 			#print comment['id']
+				comment['stoped_time'] = datetime.datetime.now().strftime("%H:%M:%S")
 				Brote_stop_this(comment)
 				#print "h"
 				com_stoped.append( comment)
 		for ip in ip_ban.keys():
-			if "178.167.254." in comment['ip'] : 
-				#pass
-				print comment['ip'],comment['user']
 			#print "bs: ", comment['ip']
 			if ip in comment['ip']:
 			#print comment['id']
+				comment['stoped_time'] = datetime.datetime.now().strftime("%H:%M:%S")
 				Brote_stop_this(comment)
-				print comment['ip']
+				#print comment['ip']
 				com_stoped.append( comment)
 	return com_stoped
     
