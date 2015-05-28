@@ -143,6 +143,28 @@ def Brote_restore_this(comentar_za_puskane):
 	response=season_dir.post("http://dnes.dir.bg/comments/admin.php", data=payload,headers  = headers)
 	
 
+def post_admin_ext(payload):
+	season_dir = requests.session()
+	season_dir.cookies = LWPCookieJar('cookies.txt')
+	season_dir.cookies.load()
+	predifined_payload = { "action":"update","list":"awaiting","page":"1","jnl_id":"0","ctype_id":"0","topic_id":"0","thread_id":"0","hobby_id":"","journals":"3,4,5,7,8,13,14,15,16,17,23,24,25,29,33,35,43"
+	,"ctypes":"1,2,3,4,5,6,7,11,13,16,17,18,19,20,21","latest_by_topic":"","filter":"0"}
+	payload.update(predifined_payload)
+	headers  = {"Host":"dnes.dir.bg", "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","X-Requested-With":"XMLHttpRequest",
+	'User-Agent':"Mozilla/5.0 (X11; Linux x86_64; rv:39.0) Gecko/20100101 Firefox/39.0","Connection":"keep-alive","Referer":"http://dnes.dir.bg/comments/admin_list_ext.php"}
+	response=season_dir.post("http://dnes.dir.bg/comments/admin_list_ext.php", data=payload,headers  = headers)
+	#print payload
+	if response.status_code == 200:
+		return 0
+	else:
+		print "post_admin_ext error:",response.status_code
+		return 1
+
+
+
+
+
+
 
 def get_news_text_by_id(link):
 	''' по получен линк към коментарите на новината , връща нейното заглавие'''
@@ -380,6 +402,28 @@ def get_news(link="http://dnes.dir.bg/?&state=2"):
 
 	return news
 
+
+
+def mark_cenzor_wrods(comments,cenz_words,cenzor_names):
+	'''Получава лист от коментари и лист от цензорни думи. Обикаля и маркира цензорните думи в коментарите. Връща променените коментари  '''
+	for comment in comments:
+		for word in cenz_words:
+			idx =  -6 
+			len_comment = len(comment._text)
+			cenz_html_str = '<font size="'+str(word.weight )+'" color="red">'  # стринга за вмъкване
+			#print "/n " + word.text 
+			while  comment._text.find( word.text,idx+6) !=-1:
+				if  comment._text.find('"red">'+ word.text,idx+6) !=-1: break   # в случай че се подава един и същ коментар втори път
+				idx=comment._text.find( word.text,idx+6) 
+				comment._text = comment._text[:idx]+ cenz_html_str+ comment._text[idx:idx + len (word.text)]+"</font>"+comment._text[idx + len (word.text):]  
+				#print idx , res._text , " blaaaa"
+				if idx+7>len_comment : break   # когато превърти 
+		for name in cenzor_names:
+			#print name.text
+			if comment._user.find(name.text) !=-1: # and comment._status == 1:
+				comment._status =7 
+				print comment._status
+				#comment._user = '<font color="red">'+comment._user +"</font>"
 
 if __name__ == "__main__":
     pass    
