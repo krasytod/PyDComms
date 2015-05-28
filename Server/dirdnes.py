@@ -9,7 +9,7 @@
 ## general imports
 import urllib2,gzip,cookielib, requests
 #from requests import session
-import random,re
+import random,re, shelve
 from cookielib import LWPCookieJar
 from bs4 import BeautifulSoup as BS
 import helper,dirbg 
@@ -215,12 +215,13 @@ def brote_moderate(comments_list,users_ban=[u'Мулетаров'] ,ip_ban=["127
 	return com_stoped
     
 def vote_up(link,small_loop=10,big_loop=4,action=1):
+    #print "vote",link
     '''Гласува автоматично в коментарите под новините. Очаква линка за гласуване, брой гласувания, и типа гласуване. 1 - положителен,2 -отрицателен '''
     import time
     #link ="https://panopticlick.eff.org/index.php?action=log&js=yes" 
     links= ["http://dnes.dir.bg/comments/voting.php?jnl_id=3&ctype_id=1&topic_id=18753004&comment_id=185917&action=2&ts=0.33454112514499024","http://dnes.dir.bg/comments/voting.php?jnl_id=3&ctype_id=1&topic_id=18753004&comment_id=185917&action=2&ts=0.4233232323234","http://dnes.dir.bg/comments/voting.php?jnl_id=3&ctype_id=1&topic_id=18753004&comment_id=185917&action=2&ts=0.55654112514499024"]
-    user_agents= [u"Mozilla/6.0 (compatible; MSIE 11.0; Windows NT 6.1)",u"Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0)",u'Mozilla/5.0 (Windows NT 6.3; WOW64; rv:31.0) Gecko/20102341 Firefox/32.0',u'Mozilla/5.0 (Macintosh; U; Intel Mac OS X; de-de) AppleWebKit/523.10.3 (KHTML, like Gecko) Version/3.0.4 Safari/523.10',' Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_4; de-de) AppleWebKit/533.16 (KHTML, like Gecko) Version/5.0 Safari/533.16']
-    user_ag =  u'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_4; de-de) AppleWebKit/533.16 (KHTML, like Gecko) Version/5.0 Safari'
+    user_agents= [u"Mozilla/6.0 (compatible; MSIE 11.0; Windows NT 6.2)",u"Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0)",u'Mozilla/5.0 (Windows NT 6.3; WOW64; rv:31.0) Gecko/20102341 Firefox/32.0',u'Mozilla/5.0 (Macintosh; U; Intel Mac OS X; de-de) AppleWebKit/523.10.3 (KHTML, like Gecko) Version/3.0.4 Safari/523.10',' Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_4; de-de) AppleWebKit/533.16 (KHTML, like Gecko) Version/5.0 Safari/533.16']
+    user_ag =  u'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_4; de-de) AppleWebKit/633.16 (KHTML, like Gecko) Version/6.0 Safari'
     rand= random.randint(1,70)  # в случай, че се нареди повторно гласуване, да има малък шанс юзър агента да е същия
     for idx in range(small_loop):
       cj = cookielib.CookieJar()
@@ -405,7 +406,7 @@ def get_news(link="http://dnes.dir.bg/?&state=2"):
 
 
 def mark_cenzor_wrods(comments,cenz_words,cenzor_names):
-	'''Получава лист от коментари и лист от цензорни думи. Обикаля и маркира цензорните думи в коментарите. Връща променените коментари  '''
+	'''Получава лист от коментари и лист от цензорни думи. Обикаля и маркира цензорните думи в коментарите. Връща променените коментари  PS. Името на функцията е сгрешено, но вече го има написана на твърде много места  восновния модул'''
 	for comment in comments:
 		for word in cenz_words:
 			idx =  -6 
@@ -424,6 +425,30 @@ def mark_cenzor_wrods(comments,cenz_words,cenzor_names):
 				comment._status =7 
 				print comment._status
 				#comment._user = '<font color="red">'+comment._user +"</font>"
+				
+def perform_premoderation_admin_ext(comments_lst):
+	'''Изпълнява опциите от модшелфа по модериране по юзър и айпи '''
+	mod_shelve = shelve.open('moderation.db')
+	temp_user = mod_shelve['mod_user']
+	#1#### Да намерим дали потребителя е в условията ма модерация по име
+	comments_lst_loop = list(comments_lst)  # правиме копие на оригиналния лист
+	comments_lst = comments_lst.all()
+	#print type(comments_lst)
+	for comment in comments_lst_loop:
+		for key in temp_user.keys():
+			if key in comment._user:  #1КРАЙ####
+				#print key ,(temp_user[key]) 
+				#print type(temp_user[key]) 
+				#Да проверим какво трябва да направим с коментара, да го извадим от мястото му в  листа, да извършим необходимите десйтвия и да го върнем най-отзад
+				if int(temp_user[key]) == 1:  # Наблюдавай само
+					comment._status = 7
+					comment._text = u'<font size="6" color=#551112> ПОТРЕБИТЕЛЯ Е СЛЕДЕН </font> <br>' + comment._text
+				elif int(temp_user[key]) == 2:  # коментара да е готов за реджект и скрит в див
+					comment._status = 8
+					#print comment._user
+					#comments_lst.append(comment)
+	#comments_lst= list(comments_lst_return)
+	
 
 if __name__ == "__main__":
     pass    
